@@ -51,7 +51,7 @@ Before starting, complete the following setup:
 4. **Verify** you can launch Cortex Code CLI from VS Code terminal
 5. **Verify Cortex Features** - Confirm your account has Cortex Agents and Cortex Search enabled. Check with your account team if unsure.
 
-> **Important:** You must have a Snowflake user role with access to run SQL and create objects (e.g., SYSADMIN or equivalent). For full Cortex Code CLI setup and permission requirements (including SNOWFLAKE.CORTEX_USER role), see the [official documentation](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-code).
+> **Important:** You must have a Snowflake user role with access to run SQL and create objects (e.g., SYSADMIN or equivalent). For full Cortex Code CLI setup and permission requirements (including [SNOWFLAKE.CORTEX_USER role](https://docs.snowflake.com/en/user-guide/snowflake-cortex/aisql#cortex-user-database-role)).
 
 > **Security:** Never store secrets or tokens in your repository. This workshop uses demo/mock data. When transitioning to real customer data or production environments, follow your organization's data governance and security policies.
 
