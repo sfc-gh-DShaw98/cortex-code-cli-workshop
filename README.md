@@ -1,9 +1,9 @@
 # Cortex Code (CoCo) CLI Workshop
 ## Build AI Agents and Predictive Workflows with Snowflake
 
-> **Duration:** 30–45 minutes (core workshop) + optional extension  
+> **Duration:** 45-60 minutes (core workshop) + optional extension  
 > **Tools:** Cortex Code CLI (VS Code), Snowflake Intelligence agent (SI agent), Snowflake ML  
-> **Goal:** Build a reusable pattern to go from data → intelligence → predictive insight within 45 minutes
+> **Goal:** Build a reusable pattern to go from data → intelligence → predictive insight within 60 minutes
 
 ---
 
@@ -27,7 +27,7 @@ Using **[Cortex Code CLI](https://docs.snowflake.com/en/user-guide/cortex-code/c
 5. See how the **Data Science workflow** extends the pattern
 6. Save your prompts for reuse
 
-> **Note:** This workshop is scoped for 30–45 minutes. See the [Optional Extension](#optional-extension-industry-specific-customization) below for industry customization.
+> **Note:** This workshop is scoped for 45-60 minutes. See the [Optional Extension](#optional-extension-industry-specific-customization) below for industry customization.
 
 ---
 
@@ -49,8 +49,19 @@ Before starting, complete the following setup:
 2. **Create a Snowflake Personal Access Token (PAT)** or use an existing SQL connection credential — follow your organization's security policies
 3. **Configure** `~/.snowflake/config.toml` with your connection
 4. **Verify** you can launch Cortex Code CLI from VS Code terminal
+5. **Verify Cortex Features** - Confirm your account has Cortex Agents and Cortex Search enabled. Check with your account team if unsure.
 
 > **Security:** Never store secrets or tokens in your repository. Follow your organization's data-handling policies when working with real data.
+
+### Required Privileges
+
+Your role needs the following privileges (or ask your Snowflake administrator to grant them):
+
+- `CREATE DATABASE`, `CREATE SCHEMA`, `CREATE STAGE`
+- `CREATE TABLE`, `CREATE VIEW`
+- `CREATE CORTEX SEARCH SERVICE ON SCHEMA`
+- `CREATE AGENT ON SCHEMA`
+- `USAGE ON WAREHOUSE`
 
 ### Successful Setup
 
@@ -73,17 +84,17 @@ cortex -c <YOUR_CONNECTION>
 
 | Time | Step |
 |---|---|
-| 0–3 min | Overview & setup verification |
-| 3–8 min | Context prompt setup |
-| 8–15 min | Generate data + agent artifacts |
-| 15–22 min | Add predictive signal |
-| 22–28 min | Load data and create objects |
-| 28–35 min | Validate with agent questions |
-| 35–45 min | Data Science workflow walkthrough |
+| 0–5 min | Overview & setup verification |
+| 5–12 min | Context prompt setup |
+| 12–22 min | Generate data + agent artifacts |
+| 22–30 min | Add predictive signal |
+| 30–40 min | Load data and create objects |
+| 40–50 min | Validate with agent questions |
+| 50–60 min | Data Science workflow walkthrough |
 
 ---
 
-## Step 1 — Generate Demo Artifacts (5–7 minutes)
+## Step 1 — Generate Demo Artifacts (7–10 minutes)
 
 In this step, you use Cortex Code CLI to generate:
 - Demo data (CSV)
@@ -113,8 +124,10 @@ Use the following exact object names:
 - Schema: DEMO
 - Stage: WORKSHOP_DB.DEMO.DATA_STAGE
 - Table: TRANSACTIONS
+- File format: WORKSHOP_DB.DEMO.CSVFORMAT
 - Semantic model YAML: semantic_model.yaml
 - Search service: TEXT_SEARCH
+- Warehouse: WORKSHOP_WH
 - SI agent: DEMO_AGENT
 
 ## TASK ORDER (follow exactly):
@@ -132,8 +145,11 @@ Run the script immediately after writing it to generate the CSV.
 
 ### Step 2: Create these SQL files (do NOT execute):
 - 01_create_table.sql - CREATE TABLE for TRANSACTIONS with appropriate column types
-- 02_load_from_stage.sql - COPY INTO from @WORKSHOP_DB.DEMO.DATA_STAGE/transactions.csv
-- 03_create_search_service.sql - CREATE CORTEX SEARCH SERVICE on NOTES_TEXT column
+- 02_load_from_stage.sql - COPY INTO from @WORKSHOP_DB.DEMO.DATA_STAGE/transactions.csv using FILE_FORMAT = WORKSHOP_DB.DEMO.CSVFORMAT
+- 03_create_search_service.sql - CREATE CORTEX SEARCH SERVICE TEXT_SEARCH
+    ON WORKSHOP_DB.DEMO.TRANSACTIONS(NOTES_TEXT)
+    WAREHOUSE = WORKSHOP_WH
+    TARGET_LAG = '1 hour';
 - 04_create_agent.sql - CREATE AGENT using FROM SPECIFICATION with this exact YAML structure:
       models:
         orchestration: auto
@@ -185,7 +201,22 @@ Now generate the artifacts.
 
 > **Note:** Ensure the semantic model path referenced in the agent prompt (`@WORKSHOP_DB.DEMO.DATA_STAGE/semantic_model.yaml`) matches the file path used when uploading to the stage.
 
+### 1C — Validate Semantic Model (Optional)
+
+Before proceeding, you can validate your semantic model:
+
+```text
+Validate the semantic_model.yaml file I just created. Check for syntax errors and confirm it will work with Cortex Analyst.
+```
+
 **Do not run any SQL yet.**
+
+### Success Criteria
+
+- `transactions.csv` exists with 100 data rows + header
+- `semantic_model.yaml` exists with valid YAML syntax
+- SQL scripts `01` through `05` exist in working directory
+- PUT commands were printed
 
 ---
 
@@ -223,9 +254,15 @@ Now generate 06_add_target.sql.
 
 **Do not run any SQL yet.**
 
+### Success Criteria
+
+- `06_add_target.sql` exists
+- File contains ALTER TABLE and UPDATE statements
+- Logic is explainable in plain English
+
 ---
 
-## Step 3 — Load Data + Create Objects (6–8 minutes)
+## Step 3 — Load Data + Create Objects (8–10 minutes)
 
 Now switch from generation to execution.
 
@@ -279,6 +316,9 @@ SHOW GRANTS ON SCHEMA WORKSHOP_DB.DEMO;
 
 ### 3B — Upload Files to Stage
 
+> **Note:** PUT commands require SnowSQL or Cortex Code CLI. They do not work in Snowsight SQL worksheets.  
+> **Alternative:** Use the Snowsight UI: **Data > Databases > WORKSHOP_DB > DEMO > Stages > DATA_STAGE > Upload Files**
+
 ```text
 Upload the following local files from my current working directory to the stage @WORKSHOP_DB.DEMO.DATA_STAGE using PUT.
 Overwrite if they already exist:
@@ -300,6 +340,12 @@ In my current connection, read and execute the contents of these local SQL files
 6) 06_add_target.sql
 ```
 
+> **Troubleshooting:** If CREATE AGENT or CREATE CORTEX SEARCH SERVICE fails:
+> - Verify your account has Cortex features enabled
+> - Confirm your role has required privileges
+> - Check the agent YAML specification syntax
+> - Contact your Snowflake administrator if issues persist
+
 ### Success Criteria
 
 - Table exists: `WORKSHOP_DB.DEMO.TRANSACTIONS` (~100 rows)
@@ -309,7 +355,7 @@ In my current connection, read and execute the contents of these local SQL files
 
 ---
 
-## Step 4 — Interact with the SI Agent (5 minutes)
+## Step 4 — Interact with the SI Agent (5–10 minutes)
 
 ### 4A — Open the SI Agent
 
@@ -334,15 +380,25 @@ What patterns best explain outcomes related to detecting fraudulent transactions
 Give me a 30-second executive summary for a business stakeholder, include 1-2 recommended actions.
 ```
 
+#### Example of Good Agent Response
+
+A successful response should:
+- Reference specific TRANSACTION_IDs (e.g., "TRANSACTION_ID 42, 87, 91...")
+- Cite evidence from NOTES_TEXT (e.g., "Investigation notes mention 'unusual pattern'...")
+- Provide quantified insights (e.g., "23% of flagged transactions occurred on weekends...")
+- Give actionable recommendations
+
 ### 4C — Optimize Agent Responses (Optional)
 
-Use the built-in agent optimization skill to refine tone and structure (no data or model changes required):
+In Cortex Code CLI, use the built-in agent optimization skill to refine tone and structure (no data or model changes required):
 
 ```text
 Refine the agent's response behavior to make answers clearer, more concise, and executive-friendly. Use the agent optimize skill.
 ```
 
-Then refresh the agent and re-ask a question to see improved responses.
+> **How to invoke:** In Cortex Code CLI, you can also type `/agent-optimization` to invoke the skill directly.
+
+Then refresh the agent in Snowsight and re-ask a question to see improved responses.
 
 ### Success Criteria
 
@@ -356,7 +412,10 @@ Then refresh the agent and re-ask a question to see improved responses.
 
 This step demonstrates the handoff from **Intelligence** (explain what's happening) to **Data Science** (predict what may happen next).
 
-> **Compute Environment:** This workflow can run locally using your Python environment, or within a Snowflake Notebook / Snowpark Container Services environment for full platform integration.
+> **Compute Environment:** Cortex Code will generate Python code. You can:
+> - Run it in a local Jupyter notebook (requires scikit-learn, pandas)
+> - Copy it into a Snowflake Notebook (Snowsight > Projects > Notebooks)
+> - Execute via Snowpark Container Services for full platform integration
 
 ### 5A — Validate the Target Column
 
@@ -374,6 +433,12 @@ Generate AND EXECUTE SQL that:
 
 Then summarize the findings in 3 short bullets focused on business relevance.
 ```
+
+### Success Criteria
+
+- IS_FRAUD column exists
+- Both TRUE and FALSE values present
+- Positive rate >1% (non-degenerate signal)
 
 ### 5B — Create Feature View
 
@@ -397,11 +462,18 @@ Include features such as:
 After creation, run SELECT * FROM the view LIMIT 5.
 ```
 
+### Success Criteria
+
+- View `WORKSHOP_DB.DEMO.FEATURES_V` exists
+- Contains IS_FRAUD label column
+- Contains engineered features
+
 ### 5C — Train and Evaluate Model
 
 > **Execution Options:**
 > - **Local:** Run in your Python environment with scikit-learn and pandas installed
-> - **Snowflake:** Execute in a Snowflake Notebook or via Snowpark Container Services
+> - **Snowflake Notebook:** Copy generated code into Snowsight > Projects > Notebooks
+> - **Snowpark Container Services:** For full platform integration
 
 ```text
 Create and execute a notebook-based ML workflow.
@@ -472,6 +544,18 @@ You've completed the workshop if you have:
 
 ---
 
+## Cleanup (Optional)
+
+To remove workshop objects from your account:
+
+```sql
+-- Run these commands to clean up workshop objects
+DROP DATABASE IF EXISTS WORKSHOP_DB;
+DROP WAREHOUSE IF EXISTS WORKSHOP_WH;
+```
+
+---
+
 ---
 
 # Optional Extension: Industry-Specific Customization
@@ -491,6 +575,29 @@ This extension allows you to tailor the workshop to a specific industry or use c
 - Customize for a specific industry vertical
 - Go deeper into features, models, and predictions
 - Prepare for a workshop or proof-of-concept
+
+---
+
+## Extension Bootstrap
+
+Before running the extension, create the CUSTOM schema:
+
+```text
+Run the following SQL in my current connection.
+
+USE ROLE SYSADMIN;
+
+-- Create schema for extension
+CREATE SCHEMA IF NOT EXISTS WORKSHOP_DB.CUSTOM;
+
+-- Stage for custom data
+CREATE STAGE IF NOT EXISTS WORKSHOP_DB.CUSTOM.DATA_STAGE
+  ENCRYPTION = (TYPE = 'SNOWFLAKE_SSE');
+
+-- Grants
+GRANT CREATE AGENT ON SCHEMA WORKSHOP_DB.CUSTOM TO ROLE SYSADMIN;
+GRANT CREATE CORTEX SEARCH SERVICE ON SCHEMA WORKSHOP_DB.CUSTOM TO ROLE SYSADMIN;
+```
 
 ---
 
@@ -540,8 +647,10 @@ Use the following exact object names:
 - Schema: CUSTOM
 - Stage: WORKSHOP_DB.CUSTOM.DATA_STAGE
 - Table: CUSTOM_TRANSACTIONS
+- File format: WORKSHOP_DB.DEMO.CSVFORMAT (reuse from core workshop)
 - Semantic model YAML: semantic_model_custom.yaml
 - Search service: CUSTOM_TEXT_SEARCH
+- Warehouse: WORKSHOP_WH
 - SI agent: CUSTOM_AGENT
 
 ## TASK ORDER (follow exactly):
@@ -575,11 +684,14 @@ NOTES_TEXT requirements:
 Run the script immediately after writing it to generate the CSV.
 
 ### Step 2: Create SQL files (do NOT execute)
-- 01_create_table.sql
-- 02_load_from_stage.sql
-- 03_create_search_service.sql
-- 04_create_agent.sql
-- 05_grants.sql
+- 01_create_table.sql - CREATE TABLE for CUSTOM_TRANSACTIONS
+- 02_load_from_stage.sql - COPY INTO using FILE_FORMAT = WORKSHOP_DB.DEMO.CSVFORMAT
+- 03_create_search_service.sql - CREATE CORTEX SEARCH SERVICE CUSTOM_TEXT_SEARCH
+    ON WORKSHOP_DB.CUSTOM.CUSTOM_TRANSACTIONS(NOTES_TEXT)
+    WAREHOUSE = WORKSHOP_WH
+    TARGET_LAG = '1 hour';
+- 04_create_agent.sql - CREATE AGENT with semantic model at @WORKSHOP_DB.CUSTOM.DATA_STAGE/semantic_model_custom.yaml
+- 05_grants.sql - Standard grants
 
 ### Step 3: Create semantic_model_custom.yaml
 - ONLY keys: name, description, tables, verified_queries
@@ -624,10 +736,9 @@ Now generate 06_add_target_signal.sql.
 ### Phase 4: Execute and Validate
 
 Follow the same execution steps as the core workshop:
-1. Bootstrap objects (update schema to CUSTOM)
-2. Upload files to stage
-3. Execute SQL scripts in order
-4. Test the agent with industry-specific questions
+1. Upload files to `@WORKSHOP_DB.CUSTOM.DATA_STAGE`
+2. Execute SQL scripts in order
+3. Test the agent with industry-specific questions
 
 ---
 
