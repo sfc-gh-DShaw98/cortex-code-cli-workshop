@@ -51,7 +51,9 @@ Before starting, complete the following setup:
 4. **Verify** you can launch Cortex Code CLI from VS Code terminal
 5. **Verify Cortex Features** - Confirm your account has Cortex Agents and Cortex Search enabled. Check with your account team if unsure.
 
-> **Security:** Never store secrets or tokens in your repository. Follow your organization's data-handling policies when working with real data.
+> **Important:** You must have a Snowflake user role with access to run SQL and create objects (e.g., SYSADMIN or equivalent). For full Cortex Code CLI setup and permission requirements (including SNOWFLAKE.CORTEX_USER role), see the [official documentation](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-code).
+
+> **Security:** Never store secrets or tokens in your repository. This workshop uses demo/mock data. When transitioning to real customer data or production environments, follow your organization's data governance and security policies.
 
 ### Required Privileges
 
@@ -222,9 +224,9 @@ Validate the semantic_model.yaml file I just created. Check for syntax errors an
 
 ## Step 2 — Add Predictive Signal (5 minutes)
 
-This step creates the **handoff point** from the SI agent to the Data Science workflow by adding a model-ready target variable.
+This step creates the **handoff point** from the SI agent to the Data Science workflow by adding a model-ready target variable (the predictive signal).
 
-### Run the Target Column Prompt
+### Run the Predictive Signal Prompt
 
 ```text
 Extend the existing dataset with a single business-relevant target variable.
@@ -340,10 +342,17 @@ In my current connection, read and execute the contents of these local SQL files
 6) 06_add_target.sql
 ```
 
+**After each SQL execution, confirm:**
+- Tables are created successfully (no errors)
+- Stage has the uploaded files (verify with `LIST @WORKSHOP_DB.DEMO.DATA_STAGE`)
+- Search service and agent report "created" with no errors
+- COPY INTO reports rows loaded (should be ~100 rows)
+
 > **Troubleshooting:** If CREATE AGENT or CREATE CORTEX SEARCH SERVICE fails:
 > - Verify your account has Cortex features enabled
-> - Confirm your role has required privileges
+> - Confirm your role has `CREATE AGENT` and `CREATE CORTEX SEARCH SERVICE` grants on the schema
 > - Check the agent YAML specification syntax
+> - Verify the semantic model file exists at the referenced stage path
 > - Contact your Snowflake administrator if issues persist
 
 ### Success Criteria
@@ -380,13 +389,15 @@ What patterns best explain outcomes related to detecting fraudulent transactions
 Give me a 30-second executive summary for a business stakeholder, include 1-2 recommended actions.
 ```
 
-#### Example of Good Agent Response
+#### What "Good" Looks Like
 
-A successful response should:
+A successful SI agent response should:
 - Reference specific TRANSACTION_IDs (e.g., "TRANSACTION_ID 42, 87, 91...")
 - Cite evidence from NOTES_TEXT (e.g., "Investigation notes mention 'unusual pattern'...")
 - Provide quantified insights (e.g., "23% of flagged transactions occurred on weekends...")
-- Give actionable recommendations
+- Give actionable recommendations (e.g., "Prioritize review of high-amount weekend transactions")
+
+> **Expected direction:** The agent should return specific transactions with drivers tied back to fraud indicators from the data.
 
 ### 4C — Optimize Agent Responses (Optional)
 
@@ -818,4 +829,6 @@ You've completed the workshop if you have:
 - A business-relevant target column
 - A saved Cortex Code prompt you can reuse
 
-**You're done!**
+**You're done!**---
+
+> **For detailed advanced scenarios**, consider creating a separate `ADVANCED.md` with extended Feature Store integration, multi-table joins, and production deployment patterns.
