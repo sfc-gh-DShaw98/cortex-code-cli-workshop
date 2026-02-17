@@ -18,7 +18,7 @@
 
 ## What You'll Build
 
-Using **[Cortex Code CLI](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-code)**, you will:
+Using **[Cortex Code CLI](https://docs.snowflake.com/en/user-guide/cortex-code/cortex-code-cli)**, you will:
 
 1. Generate realistic mock data (single-table for speed)
 2. Create a **Snowflake Intelligence agent (SI agent)** over that data
@@ -45,7 +45,7 @@ This workshop focuses on the **handoff point** between Intelligence and ML.
 
 Before starting, complete the following setup:
 
-1. **Install Cortex Code CLI** - Follow the [installation guide](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-code)
+1. **Install Cortex Code CLI** - Follow the [installation guide](https://docs.snowflake.com/en/user-guide/cortex-code/cortex-code-cli#install-cortex-code-cli)
 2. **Create a Snowflake Personal Access Token (PAT)** or use an existing SQL connection credential — follow your organization's security policies
 3. **Configure** `~/.snowflake/config.toml` with your connection
 4. **Verify** you can launch Cortex Code CLI from VS Code terminal
@@ -65,7 +65,7 @@ cortex -c <YOUR_CONNECTION>
 ```
 
 **Resources:**
-- [Cortex Code CLI Overview](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-code)
+- [Cortex Code CLI Overview](https://docs.snowflake.com/en/user-guide/cortex-code/cortex-code)
 
 ---
 
