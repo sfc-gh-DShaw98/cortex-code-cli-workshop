@@ -101,7 +101,7 @@ cortex -c <YOUR_CONNECTION>
 In this step, you use Cortex Code CLI to generate:
 - Demo data (CSV)
 - SQL scripts
-- Semantic model YAML
+- SQL script for semantic view
 - Search service + agent definitions
 
 **Important:** This step generates files locally only. No data is loaded into Snowflake yet.
@@ -127,7 +127,7 @@ Use the following exact object names:
 - Stage: WORKSHOP_DB.DEMO.DATA_STAGE
 - Table: TRANSACTIONS
 - File format: WORKSHOP_DB.DEMO.CSVFORMAT
-- Semantic model YAML: semantic_model.yaml
+- Semantic view: DEMO_SEMANTIC_VIEW
 - Search service: TEXT_SEARCH
 - Warehouse: WORKSHOP_WH
 - SI agent: DEMO_AGENT
@@ -166,23 +166,27 @@ Run the script immediately after writing it to generate the CSV.
             description: Searches transaction notes for investigation details
       tool_resources:
         Analyst1:
-          semantic_model_file: "@WORKSHOP_DB.DEMO.DATA_STAGE/semantic_model.yaml"
+          semantic_view: "WORKSHOP_DB.DEMO.DEMO_SEMANTIC_VIEW"
         Search1:
           name: WORKSHOP_DB.DEMO.TEXT_SEARCH
           max_results: 5
           title_column: TRANSACTION_ID
 - 05_grants.sql - Standard grants for the objects
 
-### Step 3: Create semantic_model.yaml
-Valid YAML with ONLY these top-level keys: name, description, tables, verified_queries
-- 2-space indentation, no tabs
-- default_aggregation values must be lowercase: sum, avg, count, min, max
-- Do NOT include: filters, relationships at top level
+### Step 3: Create 03b_create_semantic_view.sql
+Create a SQL file that creates a SEMANTIC VIEW named `DEMO_SEMANTIC_VIEW` in WORKSHOP_DB.DEMO.
+
+The semantic view should:
+- Reference the base table WORKSHOP_DB.DEMO.TRANSACTIONS
+- Define practical dimensions (date, channel, location, type, merchant, flagged)
+- Define practical measures (count of transactions, total amount, avg amount, flagged rate)
+- Include verified queries for fraud detection and customer experience analysis
+
+Use CREATE OR REPLACE SEMANTIC VIEW syntax.
 
 ### Step 4: Print PUT commands
 Print PUT commands to upload to @WORKSHOP_DB.DEMO.DATA_STAGE:
 - transactions.csv
-- semantic_model.yaml
 
 ## RULES:
 - Do NOT execute any SQL
@@ -196,27 +200,27 @@ Now generate the artifacts.
 ### What You Should See
 
 - Local files created in your working directory:
-  - `transactions.csv`
-  - `semantic_model.yaml`
-  - SQL scripts (`01_create_table.sql` through `05_grants.sql`)
+    • transactions.csv
+    • 01_create_table.sql
+    • 02_load_from_stage.sql
+    • 03_create_search_service.sql
+    • 03b_create_semantic_view.sql
+    • 04_create_agent.sql
+    • 05_grants.sql
 - PUT commands printed at the end
 
-> **Note:** Ensure the semantic model path referenced in the agent prompt (`@WORKSHOP_DB.DEMO.DATA_STAGE/semantic_model.yaml`) matches the file path used when uploading to the stage.
+### 1C — Validate Generated Files (Optional)
 
-### 1C — Validate Semantic Model (Optional)
+Before proceeding, you can validate your generated artifacts:
 
-Before proceeding, you can validate your semantic model:
-
-```text
-Validate the semantic_model.yaml file I just created. Check for syntax errors and confirm it will work with Cortex Analyst.
-```
+List the files I just created and confirm the semantic view SQL has valid syntax.
 
 **Do not run any SQL yet.**
 
 ### Success Criteria
 
 - `transactions.csv` exists with 100 data rows + header
-- `semantic_model.yaml` exists with valid YAML syntax
+- `03b_create_semantic_view.sql` exists
 - SQL scripts `01` through `05` exist in working directory
 - PUT commands were printed
 
@@ -322,11 +326,10 @@ SHOW GRANTS ON SCHEMA WORKSHOP_DB.DEMO;
 > **Alternative:** Use the Snowsight UI: **Data > Databases > WORKSHOP_DB > DEMO > Stages > DATA_STAGE > Upload Files**
 
 ```text
-Upload the following local files from my current working directory to the stage @WORKSHOP_DB.DEMO.DATA_STAGE using PUT.
-Overwrite if they already exist:
+Upload the local file from my current working directory to the stage @WORKSHOP_DB.DEMO.DATA_STAGE using PUT.
+Overwrite if it already exists:
 
 - transactions.csv
-- semantic_model.yaml
 ```
 
 ### 3C — Execute SQL Scripts
@@ -337,9 +340,10 @@ In my current connection, read and execute the contents of these local SQL files
 1) 01_create_table.sql
 2) 02_load_from_stage.sql
 3) 03_create_search_service.sql
-4) 04_create_agent.sql
-5) 05_grants.sql
-6) 06_add_target.sql
+4) 03b_create_semantic_view.sql
+5) 04_create_agent.sql
+6) 05_grants.sql
+7) 06_add_target.sql
 ```
 
 **After each SQL execution, confirm:**
@@ -351,8 +355,6 @@ In my current connection, read and execute the contents of these local SQL files
 > **Troubleshooting:** If CREATE AGENT or CREATE CORTEX SEARCH SERVICE fails:
 > - Verify your account has Cortex features enabled
 > - Confirm your role has `CREATE AGENT` and `CREATE CORTEX SEARCH SERVICE` grants on the schema
-> - Check the agent YAML specification syntax
-> - Verify the semantic model file exists at the referenced stage path
 > - Contact your Snowflake administrator if issues persist
 
 ### Success Criteria
@@ -607,6 +609,7 @@ CREATE STAGE IF NOT EXISTS WORKSHOP_DB.CUSTOM.DATA_STAGE
 
 -- Grants
 GRANT CREATE AGENT ON SCHEMA WORKSHOP_DB.CUSTOM TO ROLE SYSADMIN;
+GRANT CREATE SEMANTIC VIEW ON SCHEMA WORKSHOP_DB.CUSTOM TO ROLE SYSADMIN;
 GRANT CREATE CORTEX SEARCH SERVICE ON SCHEMA WORKSHOP_DB.CUSTOM TO ROLE SYSADMIN;
 ```
 
@@ -659,7 +662,7 @@ Use the following exact object names:
 - Stage: WORKSHOP_DB.CUSTOM.DATA_STAGE
 - Table: CUSTOM_TRANSACTIONS
 - File format: WORKSHOP_DB.DEMO.CSVFORMAT (reuse from core workshop)
-- Semantic model YAML: semantic_model_custom.yaml
+- Semantic view: CUSTOM_SEMANTIC_VIEW
 - Search service: CUSTOM_TEXT_SEARCH
 - Warehouse: WORKSHOP_WH
 - SI agent: CUSTOM_AGENT
@@ -697,18 +700,29 @@ Run the script immediately after writing it to generate the CSV.
 ### Step 2: Create SQL files (do NOT execute)
 - 01_create_table.sql - CREATE TABLE for CUSTOM_TRANSACTIONS
 - 02_load_from_stage.sql - COPY INTO using FILE_FORMAT = WORKSHOP_DB.DEMO.CSVFORMAT
-- 03_create_search_service.sql - CREATE CORTEX SEARCH SERVICE CUSTOM_TEXT_SEARCH
-    ON WORKSHOP_DB.CUSTOM.CUSTOM_TRANSACTIONS(NOTES_TEXT)
+- 03_create_search_service.sql - CREATE CORTEX SEARCH SERVICE CUSTOM_TEXT_SEARCH ON WORKSHOP_DB.CUSTOM.CUSTOM_TRANSACTIONS(NOTES_TEXT)
     WAREHOUSE = WORKSHOP_WH
     TARGET_LAG = '1 hour';
-- 04_create_agent.sql - CREATE AGENT with semantic model at @WORKSHOP_DB.CUSTOM.DATA_STAGE/semantic_model_custom.yaml
-- 05_grants.sql - Standard grants
+- 03b_create_semantic_view.sql - CREATE OR REPLACE SEMANTIC VIEW CUSTOM_SEMANTIC_VIEW
+    referencing WORKSHOP_DB.CUSTOM.CUSTOM_TRANSACTIONS with dimensions and measures
+- 04_create_agent.sql - CREATE AGENT with tool_resources referencing:
+    semantic_view: "WORKSHOP_DB.CUSTOM.CUSTOM_SEMANTIC_VIEW"
+- 05_grants.sql - Standard grants for table, semantic view, search service, and agent
 
-### Step 3: Create semantic_model_custom.yaml
-- ONLY keys: name, description, tables, verified_queries
-- Verified queries phrased in industry language tied to priorities
+### Step 3: Create 03b_create_semantic_view.sql
+Create a SQL file that creates a SEMANTIC VIEW named `CUSTOM_SEMANTIC_VIEW` in WORKSHOP_DB.CUSTOM.
+
+The semantic view should:
+- Reference the base table WORKSHOP_DB.CUSTOM.CUSTOM_TRANSACTIONS
+- Define practical dimensions (date, channel, location, type, merchant, flagged)
+- Define practical measures (count of transactions, total amount, avg amount, flagged rate)
+- Include verified queries phrased in industry language tied to PRIORITY_1 and PRIORITY_2
+
+Use CREATE OR REPLACE SEMANTIC VIEW syntax.
 
 ### Step 4: Print PUT commands
+Print PUT commands to upload to @WORKSHOP_DB.CUSTOM.DATA_STAGE:
+- custom_transactions.csv
 
 ## RULES:
 - Do NOT execute any SQL
@@ -747,8 +761,15 @@ Now generate 06_add_target_signal.sql.
 ### Phase 4: Execute and Validate
 
 Follow the same execution steps as the core workshop:
-1. Upload files to `@WORKSHOP_DB.CUSTOM.DATA_STAGE`
-2. Execute SQL scripts in order
+1. Upload `custom_transactions.csv` to `@WORKSHOP_DB.CUSTOM.DATA_STAGE`
+2. Execute SQL scripts in this order:
+   1) 01_create_table.sql
+   2) 02_load_from_stage.sql
+   3) 03_create_search_service.sql
+   4) 03b_create_semantic_view.sql
+   5) 04_create_agent.sql
+   6) 05_grants.sql
+   7) 06_add_target_signal.sql
 3. Test the agent with industry-specific questions
 
 ---
