@@ -60,7 +60,7 @@ Before starting, complete the following setup:
 Your role needs the following privileges (or ask your Snowflake administrator to grant them):
 
 - `CREATE DATABASE`, `CREATE SCHEMA`, `CREATE STAGE`
-- `CREATE TABLE`, `CREATE VIEW`
+- `CREATE TABLE`, `CREATE VIEW`, `CREATE SEMANTIC VIEW ON SCHEMA`
 - `CREATE CORTEX SEARCH SERVICE ON SCHEMA`
 - `CREATE AGENT ON SCHEMA`
 - `USAGE ON WAREHOUSE`
